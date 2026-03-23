@@ -1,0 +1,140 @@
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #000;
+      color: #fff;
+      line-height: 1.6;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+    }
+
+    nav a {
+      color: #aaa;
+      margin: 0 15px;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    nav a:hover {
+      color: #fff;
+    }
+
+    .hero {
+      padding: 80px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .hero h1 {
+      font-size: 150px;
+      font-weight: bold;
+    }
+
+    .hero p {
+      margin-top: 20px;
+      font-size: 24px;
+      color: #ccc;
+    }
+
+    .btn {
+      padding: 24px 50px;
+      border-radius: 50px;
+      border: none;
+      background: linear-gradient(45deg, purple, orange);
+      color: white;
+      cursor: pointer;
+      margin-top: 20px;
+
+      font-size: 20px;
+    }
+
+    section {
+      padding: 80px 40px;
+      border-top: 1px solid #222;
+      text-align: center;
+    }
+
+    section h2 {
+      font-size: 64px;
+      margin-bottom: 80px;
+    }
+
+    .about p {
+      max-width: 600px;
+      margin: auto;
+      color: #ccc;
+      font-size: 24px;
+    }
+
+    .resume {
+      max-width: 800px;
+      margin: auto;
+      text-align: left;
+    }
+
+    .resume-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      border-bottom: 1px solid #222;
+      padding-bottom: 15px;
+    }
+
+    .resume-item div {
+      max-width: 70%;
+    }
+
+    .years {
+      font-size: 24px;
+      color: #ccc;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+      }
+
+      nav {
+        margin-top: 10px;
+      }
+
+      .hero {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .hero h1 {
+        font-size: 36px;
+      }
+
+      section h2 {
+        font-size: 32px;
+      }
+
+      .resume-item {
+        flex-direction: column;
+      }
+
+      .resume-item div {
+        max-width: 100%;
+      }
+
+      .years {
+        margin-top: 10px;
+      }
+    }
+  
