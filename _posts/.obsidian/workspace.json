@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "2026-04-11-stimuls.md",
+                "file": "2026-04-20-4steps.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2026-04-11-stimuls"
+              "title": "2026-04-20-4steps"
             }
           },
           {
@@ -49,7 +49,8 @@
               "title": "Без названия 1"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -211,10 +212,10 @@
       "bases:Создать новую базу": false
     }
   },
-  "active": "82aac0f2352a150b",
+  "active": "daac7509b31b8c0a",
   "lastOpenFiles": [
-    "2026-04-20-4steps.md",
     "2026-04-11-stimuls.md",
+    "2026-04-20-4steps.md",
     "Без названия 1.md",
     "2026-04-11-msp09.md",
     "План исследования.md",
