@@ -1,0 +1,296 @@
+#!/usr/bin/env python3
+# md2html.py
+
+import re
+import sys
+from pathlib import Path
+
+def convert_md_to_html(md_content):
+    """Конвертирует Markdown в HTML с поддержкой Obsidian синтаксиса"""
+    
+    html = md_content
+    
+    # Таблицы (обрабатываем до других преобразований)
+    html = convert_tables(html)
+    
+    # Заголовки (# ## ### и т.д.)
+    html = re.sub(r'^######\s+(.+)$', r'<h6>\1</h6>', html, flags=re.MULTILINE)
+    html = re.sub(r'^#####\s+(.+)$', r'<h5>\1</h5>', html, flags=re.MULTILINE)
+    html = re.sub(r'^####\s+(.+)$', r'<h4>\1</h4>', html, flags=re.MULTILINE)
+    html = re.sub(r'^###\s+(.+)$', r'<h3>\1</h3>', html, flags=re.MULTILINE)
+    html = re.sub(r'^##\s+(.+)$', r'<h2>\1</h2>', html, flags=re.MULTILINE)
+    html = re.sub(r'^#\s+(.+)$', r'<h1>\1</h1>', html, flags=re.MULTILINE)
+    
+    # Изображения Obsidian: ![[image.png]] -> <img src="image.png">
+    html = re.sub(r'!\[\[(.+?)\]\]', r'<img src="../md/images/\1" alt="\1">', html)
+    
+    # Обычные изображения Markdown: ![alt](url)
+    html = re.sub(r'!\[([^\]]*)\]\(([^\)]+)\)', r'<img src="\2" alt="\1">', html)
+    
+    # Ссылки: [text](url)
+    html = re.sub(r'\[([^\]]+)\]\(([^\)]+)\)', r'<a href="\2">\1</a>', html)
+    
+    # Выделение текста (highlight) Obsidian: ==text==
+    html = re.sub(r'==(.+?)==', r'<mark>\1</mark>', html)
+    
+    # Жирный текст: **text** или __text__
+    html = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', html)
+    html = re.sub(r'__(.+?)__', r'<strong>\1</strong>', html)
+    
+    # Курсив: *text* или _text_
+    html = re.sub(r'\*(.+?)\*', r'<em>\1</em>', html)
+    html = re.sub(r'\b_(.+?)_\b', r'<em>\1</em>', html)
+    
+    # Зачеркнутый: ~~text~~
+    html = re.sub(r'~~(.+?)~~', r'<del>\1</del>', html)
+    
+    # Блоки кода: ```lang\ncode\n``` (обрабатываем до inline кода)
+    html = re.sub(r'```(\w+)?\n(.*?)```', r'<pre><code class="language-\1">\2</code></pre>', html, flags=re.DOTALL)
+    
+    # Код inline: `code`
+    html = re.sub(r'`([^`]+)`', r'<code>\1</code>', html)
+    
+    # Горизонтальная линия: --- или ***
+    html = re.sub(r'^---$', r'<hr>', html, flags=re.MULTILINE)
+    html = re.sub(r'^\*\*\*$', r'<hr>', html, flags=re.MULTILINE)
+    
+    # Вложенные списки (новая логика)
+    html = convert_nested_lists(html)
+    
+    # Цитаты: > text
+    html = re.sub(r'^>\s+(.+)$', r'<blockquote>\1</blockquote>', html, flags=re.MULTILINE)
+    
+    # НОВАЯ ЛОГИКА: одна пустая строка = <br>
+    # Заменяем одиночные пустые строки на маркер
+    html = re.sub(r'\n\n', r'\n{{SINGLE_BR}}\n', html)
+    
+    # Параграфы
+    lines = html.split('\n')
+    result = []
+    in_p = False
+    paragraph_content = []
+    
+    for line in lines:
+        stripped = line.strip()
+        
+        # Маркер для <br>
+        if stripped == '{{SINGLE_BR}}':
+            if in_p:
+                result.append('<p>' + ' '.join(paragraph_content) + '</p>')
+                paragraph_content = []
+                in_p = False
+            result.append('<br>')
+            continue
+        
+        # Это HTML тег или пустая строка
+        if not stripped or stripped.startswith('<'):
+            # Закрываем параграф если он был открыт
+            if in_p:
+                result.append('<p>' + ' '.join(paragraph_content) + '</p>')
+                paragraph_content = []
+                in_p = False
+            
+            # Добавляем HTML тег или пустую строку
+            if stripped:
+                result.append(line)
+        else:
+            # Это обычный текст - добавляем в параграф
+            if not in_p:
+                in_p = True
+            paragraph_content.append(stripped)
+    
+    # Закрываем последний параграф если остался
+    if in_p:
+        result.append('<p>' + ' '.join(paragraph_content) + '</p>')
+    
+    html = '\n'.join(result)
+    
+    return html
+
+def get_indent_level(line):
+    """Определяет уровень вложенности по табам/пробелам"""
+    indent = 0
+    for char in line:
+        if char == '\t':
+            indent += 1
+        elif char == ' ':
+            # Считаем 4 пробела = 1 таб
+            indent += 0.25
+        else:
+            break
+    return int(indent)
+
+def convert_nested_lists(text):
+    """Конвертирует вложенные списки в HTML"""
+    lines = text.split('\n')
+    result = []
+    
+    # Стек для отслеживания открытых списков
+    # Каждый элемент: (тип, уровень) где тип = 'ul' или 'ol'
+    list_stack = []
+    
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        
+        # Проверяем неупорядоченный список
+        ul_match = re.match(r'^(\t*|\s*)[\*\-]\s+(.+)$', line)
+        # Проверяем упорядоченный список
+        ol_match = re.match(r'^(\t*|\s*)\d+\.\s+(.+)$', line)
+        
+        if ul_match or ol_match:
+            if ul_match:
+                indent_str, content = ul_match.groups()
+                list_type = 'ul'
+            else:
+                indent_str, content = ol_match.groups()
+                list_type = 'ol'
+            
+            current_level = get_indent_level(indent_str)
+            
+            # Закрываем списки глубже текущего уровня
+            while list_stack and list_stack[-1][1] > current_level:
+                closed_type, _ = list_stack.pop()
+                result.append(f'</{closed_type}>')
+                if list_stack:
+                    result.append('</li>')
+            
+            # Если уровень совпадает, но тип другой - закрываем и открываем новый
+            if list_stack and list_stack[-1][1] == current_level and list_stack[-1][0] != list_type:
+                result.append('</li>')
+                closed_type, _ = list_stack.pop()
+                result.append(f'</{closed_type}>')
+                
+            # Если стек пуст или нужен новый уровень
+            if not list_stack or list_stack[-1][1] < current_level:
+                result.append(f'<{list_type}>')
+                list_stack.append((list_type, current_level))
+            elif list_stack and list_stack[-1][1] == current_level:
+                # Закрываем предыдущий элемент списка
+                result.append('</li>')
+            
+            result.append(f'<li>{content}')
+            
+        else:
+            # Не список - закрываем все открытые списки
+            if list_stack:
+                result.append('</li>')
+                while list_stack:
+                    list_type, _ = list_stack.pop()
+                    result.append(f'</{list_type}>')
+            
+            result.append(line)
+        
+        i += 1
+    
+    # Закрываем оставшиеся открытые списки
+    if list_stack:
+        result.append('</li>')
+        while list_stack:
+            list_type, _ = list_stack.pop()
+            result.append(f'</{list_type}>')
+    
+    return '\n'.join(result)
+
+def convert_tables(text):
+    """Конвертирует Markdown таблицы в HTML"""
+    lines = text.split('\n')
+    result = []
+    in_table = False
+    
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        
+        # Проверяем, начинается ли таблица (строка с | и следующая строка с |---|)
+        if '|' in line and i + 1 < len(lines) and re.match(r'^\s*\|?[\s\-:|]+\|[\s\-:|]*$', lines[i + 1]):
+            if not in_table:
+                result.append('<table>')
+                in_table = True
+            
+            # Заголовок таблицы
+            headers = [cell.strip() for cell in line.split('|')]
+            headers = [h for h in headers if h]  # Убираем пустые элементы
+            
+            result.append('<thead>')
+            result.append('<tr>')
+            for header in headers:
+                result.append(f'<th>{header}</th>')
+            result.append('</tr>')
+            result.append('</thead>')
+            result.append('<tbody>')
+            
+            i += 2  # Пропускаем разделитель
+            
+            # Строки таблицы
+            while i < len(lines) and '|' in lines[i]:
+                row_line = lines[i]
+                cells = [cell.strip() for cell in row_line.split('|')]
+                cells = [c for c in cells if c]  # Убираем пустые элементы
+                
+                result.append('<tr>')
+                for cell in cells:
+                    result.append(f'<td>{cell}</td>')
+                result.append('</tr>')
+                i += 1
+            
+            result.append('</tbody>')
+            result.append('</table>')
+            in_table = False
+            continue
+        
+        result.append(line)
+        i += 1
+    
+    return '\n'.join(result)
+
+def create_html_document(body_content, title="Converted Document"):
+    """Создает полный HTML документ"""
+    return f"""<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+{body_content}
+</body>
+</html>"""
+
+def main():
+    if len(sys.argv) < 2:
+        print("Использование: python md2html.py input.md [output.html]")
+        sys.exit(1)
+    
+    input_file = Path(sys.argv[1])
+    
+    if not input_file.exists():
+        print(f"Ошибка: файл {input_file} не найден")
+        sys.exit(1)
+    
+    if len(sys.argv) >= 3:
+        output_file = Path(sys.argv[2])
+    else:
+        output_file = input_file.with_suffix('.html')
+    
+    # Читаем Markdown файл
+    with open(input_file, 'r', encoding='utf-8') as f:
+        md_content = f.read()
+    
+    # Конвертируем в HTML
+    html_body = convert_md_to_html(md_content)
+    
+    # Создаем полный HTML документ
+    title = input_file.stem
+    full_html = create_html_document(html_body, title)
+    
+    # Сохраняем результат
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(full_html)
+    
+    print(f"✓ Конвертация завершена: {output_file}")
+
+if __name__ == "__main__":
+    main()
