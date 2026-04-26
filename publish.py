@@ -4,6 +4,7 @@
 import re
 import sys
 from pathlib import Path
+from datetime import datetime
 
 def convert_md_to_html(md_content):
     """Конвертирует Markdown в HTML с поддержкой Obsidian синтаксиса"""
@@ -244,6 +245,68 @@ def convert_tables(text):
     
     return '\n'.join(result)
 
+def extract_first_heading(md_content):
+    """Извлекает первый заголовок из Markdown контента"""
+    # Ищем первый заголовок любого уровня
+    match = re.search(r'^#{1,6}\s+(.+)$', md_content, re.MULTILINE)
+    if match:
+        return match.group(1).strip()
+    return "Без заголовка"
+
+def update_blog_list(output_file, title):
+    """Обновляет список статей в blog.html"""
+    blog_path = Path('articles/blog.html')
+    
+    # Создаем директорию и файл, если их нет
+    if not blog_path.parent.exists():
+        blog_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    if not blog_path.exists():
+        # Создаем новый blog.html
+        blog_content = """<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<title>Блог</title>
+<link href="styles.css" rel="stylesheet"/>
+</head>
+<body>
+<h1>Все статьи</h1>
+<div id="articles-list">
+<!-- ARTICLES -->
+</div>
+</body>
+</html>"""
+        with open(blog_path, 'w', encoding='utf-8') as f:
+            f.write(blog_content)
+    
+    # Читаем blog.html
+    with open(blog_path, 'r', encoding='utf-8') as f:
+        blog_content = f.read()
+    
+    # Получаем имя файла относительно articles/
+    article_filename = output_file.name
+    
+    # Проверяем, есть ли уже ссылка на эту статью
+    if f'href="{article_filename}"' in blog_content:
+        print(f"  → Статья уже есть в blog.html, обновляем заголовок")
+        # Обновляем заголовок существующей статьи
+        pattern = f'<a class="article-card" href="{article_filename}"><h2>.*?</h2></a>'
+        replacement = f'<a class="article-card" href="{article_filename}"><h2>{title}</h2></a>'
+        blog_content = re.sub(pattern, replacement, blog_content)
+    else:
+        print(f"  → Добавляем новую статью в blog.html")
+        # Добавляем новую ссылку после комментария <!-- ARTICLES -->
+        new_article = f'<a class="article-card" href="{article_filename}"><h2>{title}</h2></a>'
+        blog_content = blog_content.replace(
+            '<!-- ARTICLES -->',
+            f'<!-- ARTICLES -->\n{new_article}'
+        )
+    
+    # Сохраняем обновленный blog.html
+    with open(blog_path, 'w', encoding='utf-8') as f:
+        f.write(blog_content)
+
 def create_html_document(body_content, title="Converted Document"):
     """Создает полный HTML документ"""
     return f"""<!DOCTYPE html>
@@ -279,11 +342,14 @@ def main():
     with open(input_file, 'r', encoding='utf-8') as f:
         md_content = f.read()
     
+    # Извлекаем первый заголовок
+    article_title = extract_first_heading(md_content)
+    
     # Конвертируем в HTML
     html_body = convert_md_to_html(md_content)
     
     # Создаем полный HTML документ
-    title = input_file.stem
+    title = article_title  # Используем извлеченный заголовок
     full_html = create_html_document(html_body, title)
     
     # Сохраняем результат
@@ -291,6 +357,11 @@ def main():
         f.write(full_html)
     
     print(f"✓ Конвертация завершена: {output_file}")
+    print(f"  Заголовок статьи: {article_title}")
+    
+    # Обновляем blog.html
+    update_blog_list(output_file, article_title)
+    print(f"✓ blog.html обновлен")
 
 if __name__ == "__main__":
     main()
