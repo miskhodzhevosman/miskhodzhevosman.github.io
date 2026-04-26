@@ -322,6 +322,28 @@ def create_html_document(body_content, title="Converted Document"):
 </body>
 </html>"""
 
+def transliterate_filename(filename):
+    """Транслитерация имени файла в латиницу"""
+    translit_map = {
+        'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e',
+        'ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m',
+        'н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u',
+        'ф':'f','х':'h','ц':'ts','ч':'ch','ш':'sh','щ':'sch',
+        'ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'
+    }
+
+    result = []
+    for char in filename.lower():
+        if char in translit_map:
+            result.append(translit_map[char])
+        elif char.isalnum() or char in ('-', '_'):
+            result.append(char)
+        elif char in (' ', '.'):
+            result.append('-')
+        # остальные символы пропускаем
+
+    return ''.join(result)
+
 def main():
     if len(sys.argv) < 2:
         print("Использование: python md2html.py input.md [output.html]")
@@ -336,7 +358,15 @@ def main():
     if len(sys.argv) >= 3:
         output_file = Path(sys.argv[2])
     else:
-        output_file = input_file.with_suffix('.html')
+        # Создаем папку articles если её нет
+        articles_dir = Path("articles")
+        articles_dir.mkdir(parents=True, exist_ok=True)
+
+        # Берем имя исходного файла, переводим в латиницу
+        transliterated_name = transliterate_filename(input_file.stem)
+
+        # Сохраняем в articles/
+        output_file = articles_dir / f"{transliterated_name}.html"
     
     # Читаем Markdown файл
     with open(input_file, 'r', encoding='utf-8') as f:
