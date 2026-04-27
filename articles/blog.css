@@ -1,4 +1,35 @@
 /* blog.css */
+/* Адаптация под мобильные устройства */
+@media (max-width: 600px) {
+  body {
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+  }
+
+  #articles-list {
+    max-width: 100%;
+    gap: 10px;
+  }
+
+  .article-card {
+    padding: 15px;
+  }
+
+  .article-card h2 {
+    font-size: 1rem;
+  }
+
+  .home-link {
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+}
 
 * {
   margin: 0;
@@ -44,6 +75,22 @@ h1 {
 }
 
 .article-card:hover {
+  background-color: #333333;
+  transform: translateY(-2px);
+}
+.home-link {
+  display: inline-block;
+  margin-bottom: 25px;
+  padding: 10px 14px;
+  background-color: #2a2a2a;
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.home-link:hover {
   background-color: #333333;
   transform: translateY(-2px);
 }

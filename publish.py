@@ -318,6 +318,7 @@ def create_html_document(body_content, title="Converted Document"):
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<a class="back-to-blog" href="../">Все статьи</a>
 {body_content}
 </body>
 </html>"""

@@ -341,3 +341,92 @@ br {
         page-break-after: avoid;
     }
 }
+
+/* Кнопка "Все статьи" */
+.back-to-blog {
+    display: inline-block;
+    margin-bottom: 20px;
+    padding: 10px 14px;
+    background-color: #f5f5f5;
+    color: #333;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.95em;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    border: 1px solid #e5e5e5;
+}
+
+.back-to-blog:hover {
+    background-color: #eaeaea;
+    transform: translateY(-2px);
+    text-decoration: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .back-to-blog {
+        background-color: #2a2a2a;
+        color: #e5e5e5;
+        border: 1px solid #333;
+    }
+
+    .back-to-blog:hover {
+        background-color: #333;
+    }
+}
+
+/* Дополнительная адаптация под мобильные устройства */
+@media (max-width: 600px) {
+    body {
+        padding: 16px 12px;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+
+    h1 {
+        font-size: 1.8em;
+    }
+
+    h2 {
+        font-size: 1.4em;
+    }
+
+    h3 {
+        font-size: 1.2em;
+    }
+
+    pre {
+        padding: 12px;
+        font-size: 0.85em;
+    }
+
+    code {
+        font-size: 0.85em;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        font-size: 0.85em;
+    }
+
+    th, td {
+        padding: 8px 10px;
+    }
+
+    blockquote {
+        padding-left: 1em;
+        margin: 1em 0;
+    }
+
+    img {
+        margin: 1em auto;
+    }
+
+    .back-to-blog {
+        width: 100%;
+        text-align: center;
+        padding: 12px;
+        font-size: 0.9em;
+    }
+}
